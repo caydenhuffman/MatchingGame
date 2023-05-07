@@ -54,7 +54,6 @@ function setDeck() {
         deck.push(new Card(selections[i]));
         deck.push(new Card(selections[i]));
     }
-
 }
 
 function setPos() {
