@@ -221,25 +221,6 @@ snaresMusical = [
     // { time: "1:3", note: [], duration: '2n' },
 ]
 
-let red, green, blue;
-
-let joySwitch;
-let sensorData = {};
-
-let connectButton;
-let port;
-let writer, reader;
-
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-
-let swap = true;
-let leftswap = true;
-let rightswap = true;
-let upswap = true;
-let downswap = true;
-
-
 const cols = 4; //Needs to split it up that much. 
 const colwth = 700 / cols;
 
@@ -250,7 +231,7 @@ let curPos = 0;
 
 let pick1, pick2;
 
-let game = { maxTime: 600, elapsedTime: 0, gameMode: "Start" };
+let game = { maxTime: 60, elapsedTime: 0, gameMode: "Start" };
 let wonCardArray = []; //We will know the game is over when there has been 10 added to this array. 
 //GameMode = {"Start" | "Game" |"End"}
 
@@ -289,7 +270,7 @@ let falseSynth = new Tone.PolySynth(Tone.MonoSynth);
 
 falseSynth.set({ "oscillator": { "type": "square" }, "filter": { "Q": 2, "type": "lowpass", "rolloff": -12 }, "envelope": { "attack": 0.005, "decay": 3, "sustain": 0, "release": 0.45 }, "filterEnvelope": { "attack": 0.001, "decay": 0.32, "sustain": 0.9, "release": 3, "baseFrequency": 700, "octaves": 2.3 } });
 let snare = new Tone.PolySynth(Tone.MetalSynth);
-snare.connect(smallerFreverb);
+snare.connect(smallerFreverb); 
 snare.volume.value = '-20';
 
 falseSynth.toDestination();
@@ -341,92 +322,10 @@ function setup() {
         new MenuButton({ text: "Main Menu", x: 500, y: 450, purpose: function () { part.stop(); part2.stop(); console.log("Main Menu Clicked!"); clicked("Start"); } })
     ];
     endMenuArray[0].picked = true;
-
-
-    //Begin Arduino
-
-    if ("serial" in navigator) {
-        // The Web Serial API is supported
-        connectButton = document.getElementById("connectButton");
-    }
-    red = "255";
-    green = "255";
-    blue = "255";
-
-    //Note TO FIND
-    // changeColor("#bf3543");
-    // changeColor("#efc88c");
-
-    joySwitch = 0;
-
-
-
 }
 
 
-
-
 function draw() {
-
-    if (reader) {
-        serialRead();
-    }
-
-    if (writer) {
-        writer.write(encoder.encode(red + "," + green + "," + blue + "," + joySwitch + "\n"));
-        writer.write(new Uint8Array([0]));
-    }
-
-    // console.log("XDATA: " + map(sensorData.Xaxis, 0, 255, 0, width));
-    // console.log("XDATA: " + ceil(sensorData.Xaxis));
-
-    if (sensorData.Switch === 0 && swap) {
-        console.log("JoyCon Clicked!");
-        swap = false;
-        joyStickMove(32);
-    } else if (sensorData.Switch === 1) {
-        // console.log("False");
-        swap = true;
-    }
-
-
-    //If 123 is the midpoint then lets do this correctly
-    if (sensorData.Xaxis > 102 && sensorData.Xaxis < 133) {
-        // console.log("XValue: " + ceil(sensorData.Xaxis));
-        leftswap = true;
-        rightswap = true;
-    } else {
-        if (sensorData.Xaxis >= 153 && rightswap) {
-            console.log("Right");
-            rightswap = false;
-            joyStickMove(RIGHT_ARROW);
-
-        } else if (leftswap && sensorData.Xaxis <= 102) {
-            console.log("Left");
-            leftswap = false;
-            joyStickMove(LEFT_ARROW);
-        }
-    }
-
-    if (sensorData.Yaxis > 102 && sensorData.Yaxis < 153) {
-        // console.log("XValue: " + ceil(sensorData.Xaxis));
-        upswap = true;
-        downswap = true;
-    } else {
-        if (sensorData.Yaxis >= 153 && downswap) {
-            console.log("Down");
-            downswap = false;
-            joyStickMove(DOWN_ARROW);
-        } else if (upswap && sensorData.Yaxis <= 102) {
-            console.log("Up");
-            upswap = false;
-            joyStickMove(UP_ARROW);
-        }
-    }
-
-
-
-
     switch (game.gameMode) {
         case "Game":
             background("white");
@@ -436,7 +335,7 @@ function draw() {
 
 
             let currentTime = ceil(game.maxTime - game.elapsedTime);
-            // console.log("currentTime: " + currentTime + " BPM: " + ceil(Tone.Transport.bpm.value));
+            console.log("currentTime: " + currentTime + " BPM: " + ceil(Tone.Transport.bpm.value));
             game.elapsedTime += deltaTime / 1000;
 
             push();
@@ -483,9 +382,6 @@ function draw() {
         case "Lost":
             push();
             background("red");
-            red = 255;
-            blue = 0;
-            green = 0;
             textAlign(CENTER);
             textSize(80);
             fill("white");
@@ -504,7 +400,6 @@ function draw() {
 
 
 }
-
 
 //This function resets the board!
 function clicked(mode) {
@@ -563,136 +458,6 @@ function setPos() {
 }
 
 
-
-function joyStickMove(keyCode) {
-    switch (game.gameMode) {
-        case "Game":
-            switch (keyCode) {
-                case RIGHT_ARROW:
-                    // console.log("→");
-                    deck[curPos].hover = false;
-                    curPos = (curPos + cols + 1) % deck.length;
-                    break;
-                case LEFT_ARROW:
-                    // console.log("←");
-                    deck[curPos].hover = false;
-                    if (curPos <= cols) {
-                    } else {
-                        curPos = (curPos - cols - 1) % deck.length;
-                    }
-                    break;
-                case DOWN_ARROW:
-                    // console.log("↓");
-                    deck[curPos].hover = false;
-                    curPos = (curPos + 1) % deck.length;
-                    break;
-                case UP_ARROW:
-                    // console.log("↑");
-                    deck[curPos].hover = false;
-                    if (curPos === 0) {
-                        curPos = deck.length - 1;
-                    } else {
-                        curPos--;
-                    }
-                    break;
-                case 32:
-                    if (pick1 !== -1 && pick2 === -1) {
-                        pick2 = curPos;
-                        deck[pick2].picked = true;
-
-                        //This checks to see if they are a match or not!
-                        if (deck[pick1].color === deck[pick2].color && pick1 !== pick2) {
-                            console.log("We found a match" + deck[pick1].noteGroup);
-                            deck[pick1].matched = true;
-                            deck[pick2].matched = true;
-                            wonCardArray.push(deck[pick1].color);
-                            console.log("Matches: " + wonCardArray.length);
-                            changeColor(deck[pick1].color);
-                            noteGroupOn(deck[pick1].noteGroup);
-                            pick1 = -1;
-                            pick2 = -1;
-                            if (wonCardArray.length === 10) {
-                                // clicked("Win");
-                                setTimeout(() => {
-                                    winClicked();
-                                }, 1000);
-                            }
-                        } else {
-                            let prev1 = pick1;
-                            let prev2 = pick2;
-                            console.log("picked1: " + pick1 + "\npicked2: " + pick2);
-                            pick1 = -1;
-                            pick2 = -1;
-                            setTimeout(() => {
-                                deck[prev2].picked = false;
-                                deck[prev1].picked = false;
-                            }, 1000);
-                        }
-                    } else if (pick1 === -1) {
-                        pick1 = curPos;
-                        deck[curPos].picked = true;
-                    }
-                    break;
-                default:
-                    break;
-            }
-            deck[curPos].hover = true;
-            break;
-        case "Start":
-            switch (keyCode) {
-                case 32:
-                    console.log("Space");
-                    startMenuArray[0].selected();
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case "Win":
-            switch (keyCode) {
-                case 32:
-                    if (endMenuArray[0].picked) {
-                        endMenuArray[0].selected();
-                    } else if (endMenuArray[1].picked) {
-                        endMenuArray[1].selected();
-                    }
-                    break;
-                case LEFT_ARROW:
-                    endMenuArray[0].picked = true;
-                    endMenuArray[1].picked = false;
-                    break;
-                case RIGHT_ARROW:
-                    endMenuArray[1].picked = true;
-                    endMenuArray[0].picked = false;
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case "Lost":
-            switch (keyCode) {
-                case 32:
-                    if (endMenuArray[0].picked) {
-                        endMenuArray[0].selected();
-                    } else if (endMenuArray[1].picked) {
-                        endMenuArray[1].selected();
-                    }
-                    break;
-                case LEFT_ARROW:
-                    endMenuArray[0].picked = true;
-                    endMenuArray[1].picked = false;
-                    break;
-                case RIGHT_ARROW:
-                    endMenuArray[1].picked = true;
-                    endMenuArray[0].picked = false;
-                    break;
-                default:
-                    break;
-            }
-            break;
-    }
-}
-
 function keyPressed() {
     switch (game.gameMode) {
         case "Game":
@@ -735,8 +500,6 @@ function keyPressed() {
                             deck[pick1].matched = true;
                             deck[pick2].matched = true;
                             wonCardArray.push(deck[pick1].color);
-                            changeColor(deck[pick1].color);
-
                             console.log("Matches: " + wonCardArray.length);
 
                             noteGroupOn(deck[pick1].noteGroup);
@@ -904,14 +667,11 @@ function noteGroupOn(noteGroupNum) {
 }
 
 function winClicked() {
-    red = 0;
-    green = 128;
-    blue = 128;
     pattern.stop();
     Tone.Transport.stop();
     console.log("win Clicked");
     game.gameMode = "Win";
-    freeverb.roomSize.value = 0.2;
+    freeverb.roomSize.value = 0.2; 
     smallerFreverb.roomSize.rampTo(0.7, 10);
 
     part = new Tone.Part(((time, note) => {
@@ -929,139 +689,10 @@ function winClicked() {
     part2.start();
 }
 
-async function connect() {
-    port = await navigator.serial.requestPort();
-
-
-    await port.open({ baudRate: 9600 });
-
-
-    writer = port.writable.getWriter();
-
-
-    reader = port.readable
-        .pipeThrough(new TextDecoderStream())
-        .pipeThrough(new TransformStream(new LineBreakTransformer()))
-        .getReader();
+function connect(){
+    console.log("Connect!");
 }
 
-async function serialRead() {
-    while (true) {
-        const { value, done } = await reader.read();
-        if (done) {
-            reader.releaseLock();
-            break;
-        }
-        //  console.log(value);
-        sensorData = JSON.parse(value);
-    }
-}
-
-
-// { color: "#b1f4a3", noteGroup: 0 },
-// { color: "#efc88c", noteGroup: 1 },
-// { color: "#824983", noteGroup: 2 },
-// { color: "#bf3543", noteGroup: 3 },
-// { color: "#83d9ff", noteGroup: 4 },
-// { color: "orange", noteGroup: 5 },
-// { color: "#ec84ae", noteGroup: 6 },
-// { color: "#b7b7b7", noteGroup: 7 },
-// { color: "#9e4b2d", noteGroup: 8 },
-// { color: "#375a97", noteGroup: 9 },
-
-
-//Note TO FIND
-function changeColor(color) {
-    // console.log("Color changed: " + color);
-    console.log("COLOR:  " + color);
-    switch (color) {
-        case "#b1f4a3":
-            red = 0;
-            green = 255;
-            blue = 0;
-            break;
-        case "#efc88c":
-            red = 255;
-            green = 170;
-            blue = 0;
-            break;
-        case "#824983":
-            red = 255;
-            blue = 255;
-            green = 0;
-            break;
-
-        case "#bf3543":
-            red = 255;
-            blue = 0;
-            green = 0;
-            break;
-
-        case "#83d9ff":
-            red = 100;
-            blue = 255;
-            green = 100;
-            break;
-
-        case "orange":
-            red = 255;
-            blue = 0;
-            green = 30;
-            break;
-
-        case "#ec84ae":
-            //pink
-            red = 255;
-            blue = 19;
-            green = 25;
-            break;
-        case "#b7b7b7":
-            //grey
-            red = 100;
-            blue = 100;
-            green = 100;
-            break;
-        case "#9e4b2d":
-            //tan
-            red = 130;
-            green = 75;
-            blue = 0;
-            break;
-
-        case "#375a97":
-            red = 0;
-            green = 0;
-            blue = 255;
-            break;
-
-        default:
-            // red = 0;
-            // green = 0;
-            // blue = 0;
-            break;
-    }
-}
-
-class LineBreakTransformer {
-    constructor() {
-        // A container for holding stream data until a new line.
-        this.chunks = "";
-    }
-
-    transform(chunk, controller) {
-        // Append new chunks to existing chunks.
-        this.chunks += chunk;
-        // For each line breaks in chunks, send the parsed lines out.
-        const lines = this.chunks.split("\n");
-        this.chunks = lines.pop();
-        lines.forEach((line) => controller.enqueue(line));
-    }
-
-    flush(controller) {
-        // When the stream is closed, flush any remaining chunks out.
-        controller.enqueue(this.chunks);
-    }
-}
 
 class Card {
     constructor(struct) {
