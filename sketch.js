@@ -250,7 +250,7 @@ let curPos = 0;
 
 let pick1, pick2;
 
-let game = { maxTime: 600, elapsedTime: 0, gameMode: "Start" };
+let game = { maxTime: 120, elapsedTime: 0, gameMode: "Start" };
 let wonCardArray = []; //We will know the game is over when there has been 10 added to this array. 
 //GameMode = {"Start" | "Game" |"End"}
 
